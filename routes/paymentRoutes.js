@@ -29,8 +29,8 @@ router.post('/create-checkout-session', auth, async (req, res) => {
             payment_method_types: ['card'],
             line_items: lineItems,
             mode: 'payment',
-            success_url: `${process.env.FRONTEND_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${process.env.FRONTEND_URL}/payment-cancel`,
+            success_url: `${process.env.FRONTEND_URL || 'https://green-cart-web-1.vercel.app'}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${process.env.FRONTEND_URL || 'https://green-cart-web-1.vercel.app'}/payment-cancel`,
             metadata: {
                 userId: req.user.id,
                 items: JSON.stringify(items),
