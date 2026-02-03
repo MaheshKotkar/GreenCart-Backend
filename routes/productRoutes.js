@@ -69,12 +69,15 @@ router.post('/add', upload.single('image'), async (req, res) => {
     try {
         let productData = req.body;
 
-        // If file uploaded, use its path
+        // If file uploaded, convert to Base64 and store in DB
         if (req.file) {
-            // Construct full URL or relative path. 
-            // Using relative path accessible via static serve
-            const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
-            productData.image = imageUrl;
+            const filePath = path.join(__dirname, '..', 'uploads', req.file.filename);
+            const fileData = fs.readFileSync(filePath);
+            const base64Image = `data:${req.file.mimetype};base64,${fileData.toString('base64')}`;
+            productData.image = base64Image;
+
+            // Delete temp file
+            fs.unlinkSync(filePath);
         }
 
         const newProduct = new Product(productData);
@@ -140,11 +143,16 @@ router.post('/update', upload.single('image'), async (req, res) => {
             delete updateData.oldPrice;
         }
 
-        // If a new image is uploaded, update its path
+        // If a new image is uploaded, convert to Base64
         if (req.file) {
-            const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
-            updateData.image = imageUrl;
-            console.log('Updated image URL:', imageUrl);
+            const filePath = path.join(__dirname, '..', 'uploads', req.file.filename);
+            const fileData = fs.readFileSync(filePath);
+            const base64Image = `data:${req.file.mimetype};base64,${fileData.toString('base64')}`;
+            updateData.image = base64Image;
+            console.log('Updated image to Base64');
+
+            // Delete temp file
+            fs.unlinkSync(filePath);
         }
 
         // Update product

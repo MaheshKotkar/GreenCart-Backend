@@ -28,6 +28,7 @@ const orderRoutes = require('./routes/orderRoutes');
 const productRoutes = require('./routes/productRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
+const migrationRoutes = require('./routes/migrationRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/cart', cartRoutes);
@@ -35,6 +36,7 @@ app.use('/api/order', orderRoutes);
 app.use('/api/product', productRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/category', categoryRoutes);
+app.use('/api/migrate', migrationRoutes);
 
 // MongoDB Connection
 const PORT = process.env.PORT || 5000;

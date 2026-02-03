@@ -41,7 +41,14 @@ router.post('/add', upload.single('image'), async (req, res) => {
         let imageData = '';
 
         if (req.file) {
-            imageData = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+            // Convert to Base64
+            const filePath = path.join(__dirname, '..', 'uploads', req.file.filename);
+            const fileData = fs.readFileSync(filePath);
+            const base64Image = `data:${req.file.mimetype};base64,${fileData.toString('base64')}`;
+            imageData = base64Image;
+
+            // Delete temp file
+            fs.unlinkSync(filePath);
         } else {
             return res.status(400).json({ success: false, message: 'Image is required' });
         }
@@ -108,14 +115,23 @@ router.put('/update/:id', upload.single('image'), async (req, res) => {
         }
 
         if (req.file) {
-            // Delete old image if it exists and is not a default one
+            // Convert to Base64
+            const filePath = path.join(__dirname, '..', 'uploads', req.file.filename);
+            const fileData = fs.readFileSync(filePath);
+            const base64Image = `data:${req.file.mimetype};base64,${fileData.toString('base64')}`;
+
+            // Delete old file if it was a local file reference (unlikely now with Base64 but good for transition)
             if (category.image && category.image.includes('/uploads/cat_')) {
                 const oldImagePath = path.join(__dirname, '..', 'uploads', path.basename(category.image));
                 if (fs.existsSync(oldImagePath)) {
                     fs.unlinkSync(oldImagePath);
                 }
             }
-            category.image = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+
+            category.image = base64Image;
+
+            // Delete temp file
+            fs.unlinkSync(filePath);
         }
 
         await category.save();
