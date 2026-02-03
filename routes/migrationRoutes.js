@@ -87,4 +87,64 @@ router.get('/images-to-base64', async (req, res) => {
     }
 });
 
+// @route   GET api/migrate/fix-product-categories
+// @desc    Normalize product category names to match DB exactly
+router.get('/fix-product-categories', async (req, res) => {
+    try {
+        const categories = await Category.find({});
+        const products = await Product.find({});
+        let updatedCount = 0;
+        let mapping = {}; // To log what was changed
+
+        // Create a mapping map for easy lookup
+        const catMap = {};
+        categories.forEach(c => {
+            catMap[c.name.toLowerCase().trim()] = c.name;
+        });
+
+        // Common manual mappings for defaults
+        const aliasMap = {
+            'vegetables': 'Organic veggies',
+            'fruits': 'Fresh Fruits',
+            'drinks': 'Cold Drinks',
+            'instant': 'Instant Food',
+            'grains': 'Grains & Cereals',
+            'dairy': 'Dairy Products',
+            'bakery': 'Bakery & Breads',
+            'chips': 'Chips'
+        };
+
+        for (const product of products) {
+            const currentCat = product.category ? product.category.toLowerCase().trim() : '';
+            let targetCat = null;
+
+            // 1. Check direct map
+            if (catMap[currentCat]) {
+                targetCat = catMap[currentCat];
+            }
+            // 2. Check alias map
+            else if (aliasMap[currentCat]) {
+                targetCat = aliasMap[currentCat];
+            }
+
+            // Update if different
+            if (targetCat && product.category !== targetCat) {
+                mapping[product.name] = `${product.category} -> ${targetCat}`;
+                product.category = targetCat;
+                await product.save();
+                updatedCount++;
+            }
+        }
+
+        res.json({
+            success: true,
+            updatedCount,
+            mapping
+        });
+    } catch (err) {
+        console.error('Category fix failed:', err);
+        res.status(500).json({ success: false, message: 'Fix failed', error: err.message });
+    }
+});
+
 module.exports = router;
