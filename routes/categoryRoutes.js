@@ -92,6 +92,43 @@ router.post('/seed', async (req, res) => {
     }
 });
 
+// @route   PUT api/category/update/:id
+// @desc    Update a category
+router.put('/update/:id', upload.single('image'), async (req, res) => {
+    try {
+        const { name } = req.body;
+        const category = await Category.findById(req.params.id);
+
+        if (!category) {
+            return res.status(404).json({ success: false, message: 'Category not found' });
+        }
+
+        if (name) {
+            category.name = name;
+        }
+
+        if (req.file) {
+            // Delete old image if it exists and is not a default one
+            if (category.image && category.image.includes('/uploads/cat_')) {
+                const oldImagePath = path.join(__dirname, '..', 'uploads', path.basename(category.image));
+                if (fs.existsSync(oldImagePath)) {
+                    fs.unlinkSync(oldImagePath);
+                }
+            }
+            category.image = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+        }
+
+        await category.save();
+        res.json({ success: true, message: 'Category updated successfully', category });
+    } catch (err) {
+        console.error(err);
+        if (err.code === 11000) {
+            return res.status(400).json({ success: false, message: 'Category name already exists' });
+        }
+        res.status(500).send('Server error');
+    }
+});
+
 // @route   DELETE api/category/delete/:id
 // @desc    Delete a category
 router.delete('/delete/:id', async (req, res) => {
